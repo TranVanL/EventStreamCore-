@@ -1,4 +1,13 @@
+#pragma once
 #include "ingest_server.hpp"
+#include <spdlog/spdlog.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <cctype>
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
 
 namespace Ingest {
 

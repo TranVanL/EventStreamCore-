@@ -21,9 +21,9 @@ int main( int argc, char* argv[] ) {
     if (argc > 1)
         spdlog::info("Config File for Backend Engine: {}", argv[1]);
     else 
-        spdlog::warn("No config file provided, using default settings.");
+        spdlog::info("No config file provided, using default settings.");
     
-    spdlog::info("Initialization complete. Running main application...");
+   
 
     AppConfig::AppConfiguration config;
     try {
@@ -33,7 +33,7 @@ int main( int argc, char* argv[] ) {
         spdlog::error("Failed to load configuration: {}", e.what());
         return EXIT_FAILURE;
     }
-
+    spdlog::info("Initialization complete. Running main application...");
     // Application main loop would go here 
     spdlog::info("Application is running "); 
 
@@ -64,12 +64,12 @@ int main( int argc, char* argv[] ) {
 
     spdlog::info("Shutdown requested, stopping services...");
     // Stop producers to prevent new events
-    tcpServer.stop(); 
-    // Stop processor (drains queue and submits remaining tasks)
-    eventProcessor.stop();
-    // Shutdown thread pool and wait for storage tasks to finish
-    workerPool.shutdown();
+    // tcpServer.stop(); 
+    // // Stop processor (drains queue and submits remaining tasks)
+    // eventProcessor.stop();
+    // // Shutdown thread pool and wait for storage tasks to finish
+    // workerPool.shutdown();
 
-    spdlog::info("EventStreamCore stopped");
+    spdlog::info("EventStreamCore End !!!");
     return 0;
 }

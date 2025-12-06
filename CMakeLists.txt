@@ -15,8 +15,7 @@ else()
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Test
-enable_testing()
+
 
 # Dependencies
 find_package(Boost 1.75 REQUIRED)

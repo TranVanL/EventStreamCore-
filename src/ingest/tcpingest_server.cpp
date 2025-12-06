@@ -1,11 +1,6 @@
 #include "ingest/tcpingest_server.hpp"
 #include "event/EventFactory.hpp"
 #include "ingest/tcp_parser.hpp"
-#include <spdlog/spdlog.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-
 
 namespace Ingest {
   
@@ -46,7 +41,7 @@ namespace Ingest {
     void TcpIngestServer::stop() {
         isRunning.store(false , std::memory_order_release);
         if (server_fd != -1) {
-            close(server_fd);
+            shutdown(server_fd, SHUT_RDWR);
             server_fd = -1;
         }
         if (acceptThread.joinable()){
@@ -83,7 +78,7 @@ namespace Ingest {
         constexpr size_t buffer_size = 4096;
         char buffer[buffer_size];
 
-        while(isRunning.load(std::memory_order_acquire)) {
+        while (isRunning.load(std::memory_order_acquire)) {
             ssize_t bytes_received = recv(client_fd, buffer, buffer_size, 0);
             if (bytes_received <= 0) {
                 spdlog::info("Client {} disconnected.", client_address);
@@ -97,23 +92,32 @@ namespace Ingest {
                 event.metadata["client_address"] = client_address;
                 eventBus.publishEvent(event);
                 spdlog::info("Received {} bytes from {} and published event ID {} with topic {}", bytes_received, client_address, event.id, event.topic);
-                for (const auto& byte : event.payload) {
-                    spdlog::info("  Payload byte: 0x{:02x}", byte);
+
+                // Try to print payload as UTF-8/text when reasonable, otherwise fall back to a hex dump.
+                if (!event.payload.empty()) {
+                    std::string text(event.payload.begin(), event.payload.end());
+                    bool printable = std::all_of(text.begin(), text.end(), [](unsigned char c) {
+                        return std::isprint(c) || std::isspace(c);
+                    });
+
+                    if (printable) {
+                        // Print as text (may contain whitespace). Limit length to avoid huge logs.
+                        const size_t max_len = 1024;
+                        if (text.size() > max_len) {
+                            spdlog::info("  Payload text (truncated {} bytes): {}...", text.size(), text.substr(0, max_len));
+                        } else {
+                            spdlog::info("  Payload text: {}", text);
+                        }
+                    } else {
+                       spdlog::info("Payload hexa cannot print as text ");
+                    }
                 }
+
             } catch (const std::exception& e) {
                 spdlog::warn("Parse error from {}: {} - publishing raw payload", client_address, e.what());
-                // Publish raw payload as an event with empty topic
-                auto event = EventStream::EventFactory::createEvent(
-                    EventStream::EventSourceType::TCP,
-                    raw,
-                    std::string(),
-                    {{"client_address", client_address}},
-                    false
-                );
-                eventBus.publishEvent(event);
-                spdlog::info("Received {} bytes from {} and published event ID {} (raw)", bytes_received, client_address, event.id);
             }
         }
+
         close(client_fd);
         spdlog::info("Closed connection with client {}", client_address);
     }
