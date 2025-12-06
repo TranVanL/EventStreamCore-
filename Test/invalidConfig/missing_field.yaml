@@ -1,5 +1,5 @@
+# Missing fields: port in tcp ingestion, host in udp ingestion, version field
 app_name: "EventStreamCore"
-version: "1.0.0"
 description: "Core library for Event Stream processing"
 author: "Van Luu"
 
@@ -9,13 +9,10 @@ logging:
 
 ingestion:
   tcp:
-    host: "127.0.0.1"
-    port: 9000
-    enable: true
+    host: "127.127.127.0"
     maxConnections: 1000
 
   udp:
-    host: "127.0.0.1"
     port: 9001
     enable: false
     bufferSize: 65536
@@ -57,7 +54,3 @@ broadcast:
 plugins:
   load:
     - "plugins/plugins.so"
-
-Threads_pool:
-  min_threads: 4
-  max_threads: 32

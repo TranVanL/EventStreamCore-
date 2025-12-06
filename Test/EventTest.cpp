@@ -1,0 +1,21 @@
+#include <gtest/gtest.h>
+#include "event/EventFactory.hpp"
+#include "event/EventBus.hpp"
+
+TEST(EventFactory , creatEvent) {
+    using namespace EventStream;
+    
+    std::vector<uint8_t> payload = {0x01, 0x02, 0x03};
+    std::unordered_map<std::string, std::string> metadata = {{"key1", "value1"}, {"key2", "value2"}};
+
+    // include routing_key and topic in metadata now that Event doesn't have those fields
+    metadata["routing_key"] = "route1";
+    metadata["topic"] = "topic1";
+    Event event = EventFactory::createEvent(EventSourceType::UDP, payload, metadata, true);
+    EXPECT_EQ(event.sourceType, EventSourceType::UDP);
+    EXPECT_EQ(event.payload, payload);
+    EXPECT_EQ(event.metadata, metadata);
+    EXPECT_TRUE(event.is_binary);
+
+}
+

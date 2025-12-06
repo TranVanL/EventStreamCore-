@@ -1,0 +1,38 @@
+#include "storage_engine/storage_engine.hpp"
+#include <spdlog/spdlog.h>
+#include <cstdint>
+#include <stdexcept>
+
+StorageEngine::StorageEngine(const std::string& storagePath) {
+    storageFile.open(storagePath, std::ios::binary | std::ios::app);
+    if (!storageFile.is_open()) {
+        spdlog::error("Failed to open storage file at {}", storagePath);
+        throw std::runtime_error("Failed to open storage file");
+    }
+}
+
+StorageEngine::~StorageEngine() {
+    if (storageFile.is_open()) {
+        storageFile.close();
+    }
+}
+
+void StorageEngine::storeEvent(const EventStream::Event& event) {
+    std::lock_guard<std::mutex> lock(storageMutex);
+    // Simple binary serialization: write timestamp and sourceType as binary,
+    // then event id, payload size and payload.
+    uint64_t ts = static_cast<uint64_t>(event.timestamp);
+    storageFile.write(reinterpret_cast<const char*>(&ts), sizeof(ts));
+    uint8_t source = static_cast<uint8_t>(event.sourceType);
+    storageFile.write(reinterpret_cast<const char*>(&source), sizeof(source));
+    storageFile.write(reinterpret_cast<const char*>(&event.id), sizeof(event.id));
+    uint64_t payloadSize = event.payload.size();
+    storageFile.write(reinterpret_cast<const char*>(&payloadSize), sizeof(payloadSize));
+    storageFile.write(reinterpret_cast<const char*>(event.payload.data()), payloadSize);
+    storageFile.flush();
+
+    if (!storageFile) {
+        spdlog::error("Failed to write event {} to storage", event.id);
+        throw std::runtime_error("Failed to write event to storage");
+    }
+}
