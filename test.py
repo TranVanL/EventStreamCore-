@@ -46,7 +46,7 @@ def stress_sender():
 
             counter += 1
             # giảm delay để tăng tốc
-            # time.sleep(0.1)  # bỏ hoặc giảm xuống 0.001
+            time.sleep(0.001)  # bỏ hoặc giảm xuống 0.001
         except Exception as e:
             print("Connection lost:", e)
             s.close()
