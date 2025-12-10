@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
 add_library(eventprocessor STATIC
-    event_processor.cpp
+    realtime_processor.cpp
 )
 
 target_include_directories(eventprocessor

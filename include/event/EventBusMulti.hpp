@@ -1,6 +1,5 @@
 #pragma once
 #include "Event.hpp"
-#include "Types.hpp"
 #include <mutex>
 #include <condition_variable>
 #include <deque>

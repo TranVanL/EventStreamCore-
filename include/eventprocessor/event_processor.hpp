@@ -1,35 +1,26 @@
 #pragma once
-#include "event/EventBus.hpp"
+#include "event/EventBusMulti.hpp"
 #include <storage_engine/storage_engine.hpp>
 #include <thread>
 #include <atomic>
-#include <mutex>
-#include <condition_variable>
-#include <queue>
 #include "utils/thread_pool.hpp"
 
 class EventProcessor {
 public:
-    EventProcessor(EventStream::EventBus& bus, StorageEngine& storage, ThreadPool* pool = nullptr);
-    ~EventProcessor();
+    EventProcessor(EventStream::EventBusMulti& bus, StorageEngine& storage, ThreadPool* pool = nullptr)
+        : eventBus(bus), storageEngine(storage), workerPool(pool) {}
 
-    void init();
-    void start();
-    void stop();
+    virtual ~EventProcessor() = default;
 
-private:
-    // callback invoked by EventBus when an event is published; pushes to internal queue
-    void onEvent(const EventStream::Event& event);
-    // worker loop that processes queued events
-    void processLoop();
+    virtual void start() = 0;
+    virtual void stop() = 0;
+    virtual void processLoop() = 0;
 
-    EventStream::EventBus& eventBus;
+protected:
+    EventStream::EventBusMulti& eventBus;
     StorageEngine& storageEngine;
-    std::atomic<bool> isRunning;
     
-    ThreadPool* workerPool = nullptr;
     std::thread processingThread;
-    std::mutex incomingMutex;
-    std::condition_variable incomingCv;
-    std::queue<EventStream::Event> incomingQueue;
+    std::atomic<bool> isRunning{false};
+    ThreadPool* workerPool = nullptr;
 };

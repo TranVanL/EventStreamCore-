@@ -1,5 +1,5 @@
 #pragma once
-#include "event/EventBusMulti.hpp"
+#include "eventprocessor/event_processor.hpp"
 #include <storage_engine/storage_engine.hpp>
 #include <thread>
 #include <atomic>
@@ -8,28 +8,20 @@
 #include <queue>
 #include "utils/thread_pool.hpp"
 
-class RealtimeProcessor {
+class RealtimeProcessor : public EventProcessor {
 public:
-    RealtimeProcessor(EventStream::EventBus& bus, StorageEngine& storage, ThreadPool* pool = nullptr);
-    ~RealtimeProcessor();
+    RealtimeProcessor(EventStream::EventBusMulti& bus, StorageEngine& storage, ThreadPool* pool = nullptr)
+        : EventProcessor(bus, storage, pool) {
+    };
 
-    void init();
-    void start();
-    void stop();
+    virtual ~RealtimeProcessor() {
+        stop();
+    };
 
-private:
-    // callback invoked by EventBus when an event is published; pushes to internal queue
-    void onEvent(const EventStream::Event& event);
-    // worker loop that processes queued events
-    void processLoop();
+    virtual void start() override;
 
-    EventStream::EventBus& eventBus;
-    StorageEngine& storageEngine;
-    std::atomic<bool> isRunning;
-    
-    ThreadPool* workerPool = nullptr;
-    std::thread processingThread;
-    std::mutex incomingMutex;
-    std::condition_variable incomingCv;
-    std::queue<EventStream::Event> incomingQueue;
+    virtual void stop() override;
+
+    virtual void processLoop() override;
+
 };
